@@ -10,7 +10,8 @@ DASHBOARD_PREFIX = ''
 # Location of the general Afterglow Core data files
 DATA_ROOT = '.'
 
-
+#Enable Flask debug mode for local dev
+DEBUG = True
 ###############################################################################
 # Database engine options
 ###############################################################################
@@ -18,7 +19,7 @@ DATA_ROOT = '.'
 # Database backend: "Mysql", "mysql+mysqldb", etc.; see
 # https://docs.sqlalchemy.org/en/14/core/engines.html
 # Note: sqlite not supported
-DB_BACKEND = ''
+DB_BACKEND = 'mysql+pymysql'
 
 # Database server address
 DB_HOST = 'localhost'
@@ -28,7 +29,6 @@ DB_PORT = 3306
 DB_USER = 'afterglow_core'
 # Password must be encrypted with afterglow_core/scripts/encrypt.py
 DB_PASS = ''
-
 # Database schema containing all Afterglow Core tables
 DB_SCHEMA = 'afterglow'
 
