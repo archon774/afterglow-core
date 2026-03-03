@@ -30,12 +30,7 @@ import time
 import secrets
 
 from flask import current_app, request
-from authlib.oauth2.rfc6749 import ClientMixin
-from authlib.oauth2.rfc6749 import grants
-from authlib.oauth2.rfc7636 import CodeChallenge
-from authlib.integrations.sqla_oauth2 import create_save_token_func
-from authlib.integrations.flask_oauth2 import AuthorizationServer
-from .resources import users
+
 
 __all__ = [
     'init_oauth', 'oauth_clients', 'oauth_server',
@@ -53,6 +48,12 @@ def init_oauth():
 
     :return: None
     """
+    from authlib.oauth2.rfc6749 import ClientMixin
+    from authlib.oauth2.rfc6749 import grants
+    from authlib.oauth2.rfc7636 import CodeChallenge
+    from authlib.integrations.sqla_oauth2 import create_save_token_func
+    from authlib.integrations.flask_oauth2 import AuthorizationServer
+    from .resources import users
 
     global oauth_server
 
