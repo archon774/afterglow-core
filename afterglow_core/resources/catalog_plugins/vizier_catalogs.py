@@ -210,16 +210,18 @@ class VizierCatalog(Catalog):
                             val = row[mag_col]
                         except KeyError:
                             val = row[mag_col.replace("'", '_')]
-                        if val and val < 99:
-                            m = Mag(value=val)
+                        # getattr guard handles numpy.ma masked scalars: bool(masked)
+                        # raises ValueError on newer numpy, silently dropping the mag.
+                        if not getattr(val, 'mask', False) and val and val < 99:
+                            m = Mag(value=float(val))
                             # noinspection PyBroadException
                             try:
                                 try:
                                     val = row[mag_err_col]
                                 except KeyError:
                                     val = row[mag_err_col.replace("'", '_')]
-                                if val:
-                                    m.error = val
+                                if not getattr(val, 'mask', False) and val:
+                                    m.error = float(val)
                             except Exception:
                                 pass
                             source.mags[mag] = m
