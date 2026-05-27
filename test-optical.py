@@ -879,24 +879,50 @@ def main() -> int:
 
     # ── Catalog connectivity diagnostic ───────────────────────────────────────
     # Query APASS for a small region (Carina Nebula center) and print the raw
-    # column types and values for the first source. This reveals masked-array
-    # or type mismatches before the batch runs.
+    # column types and values. This reveals masked-array or type mismatches.
     logger.info("── Catalog diagnostic: probing APASS via VizieR ──")
     try:
         with afterglow_app.app_context():
             from afterglow_core.resources.catalog_plugins.apass_catalog import APASSCatalog
+            from afterglow_core.resources.catalog_plugins import vizier_catalogs as _vc
             from astroquery.vizier import Vizier as _Vizier
-            import numpy as np
+            from astropy.coordinates import SkyCoord as _SkyCoord
+            from astropy.units import arcmin as _arcmin, hour as _hour, deg as _deg
+            import numpy as _np
             _cat = APASSCatalog()
-            _sources = _cat.query_region(10.6833, -59.8667, width_arcmins=10)
+
+            # Raw table query — bypass table_to_sources to see actual column types
+            _kwargs = {}
+            if _cat.vizier_server:
+                _kwargs['vizier_server'] = _cat.vizier_server
+            _viz = _Vizier(
+                catalog=_cat.vizier_catalog, columns=_cat._columns,
+                row_limit=10, **_kwargs)
+            _coord = _SkyCoord(ra=10.6833, dec=-59.8667, unit=(_hour, _deg), frame='fk5')
+            _resp = _viz.query_region(_coord, catalog=_viz.catalog,
+                                      cache=False, width=10*_arcmin, height=10*_arcmin)
+            if _resp:
+                _tbl = _resp[0]
+                logger.info("  Raw table: %d rows, columns: %s", len(_tbl), _tbl.colnames)
+                for _row in _tbl[:2]:
+                    logger.info("  --- row ---")
+                    for _col in ['Vmag', 'e_Vmag', 'Bmag', 'e_Bmag']:
+                        if _col in _tbl.colnames:
+                            _val = _row[_col]
+                            logger.info("    %s = %r  type=%s  masked=%s",
+                                        _col, _val, type(_val).__name__,
+                                        getattr(_val, 'mask', 'n/a'))
+            else:
+                logger.warning("  Raw APASS query returned no results")
+
+            # Also test the full query_box path
+            _sources = _cat.query_box(10.6833, -59.8667, width_arcmins=10)
             if _sources:
                 _s = _sources[0]
-                logger.info("  APASS query returned %d sources", len(_sources))
-                logger.info("  First source mags keys: %s", list(_s.mags.keys()))
-                for _k, _m in list(_s.mags.items())[:4]:
-                    logger.info("  mags[%r] = %r (type %s)", _k, _m.value, type(_m.value).__name__)
+                logger.info("  query_box returned %d sources; first mags: %s",
+                            len(_sources), list(_s.mags.keys()))
             else:
-                logger.warning("  APASS query returned 0 sources")
+                logger.warning("  query_box returned 0 sources")
     except Exception as _diag_exc:
         logger.warning("  Catalog diagnostic failed: %s", _diag_exc, exc_info=True)
     logger.info("── End catalog diagnostic ──")
