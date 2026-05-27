@@ -31,16 +31,6 @@ class USNOB1Catalog(VizierCatalog):
         'id': 'USNO-B1.0', 'ra_hours': 'RAJ2000/15', 'dec_degs': 'DEJ2000',
     }
     sort = ['+B1mag']
-    filter_lookup = {
-        # USNO-B1.0 has only photographic B and R; derive standard Johnson bands.
-        # V ≈ R + 0.444*(B-R) is the standard photographic→Johnson interpolation.
-        'V':  'R + 0.444*(B - R)',
-        'I':  'R - 0.444*(B - R)',
-        'uprime': 'B + 0.78*(B - R) - 0.88',
-        'gprime': 'B - 0.44*(B - R)',
-        'rprime': 'R + 0.153*(B - R) + 0.117',
-        'iprime': 'R - 0.386*(B - R) - 0.397',
-    }
 
     def table_to_sources(self, table: Union[list, Table]) \
             -> TList[CatalogSource]:

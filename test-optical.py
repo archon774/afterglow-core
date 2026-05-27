@@ -465,7 +465,12 @@ def build_default_field_cal(user_id: Optional[int]) -> tuple:
     # 2. No stored presets — discover available catalog plugins
     # Exclude SDSS: its astroquery plugin passes a tuple to Angle() which
     # raises TypeError in astropy ≥5.x.
-    catalog_names = [n for n in known_catalogs.keys() if n != 'SDSS']
+    # Put APASS first: it has direct B, V, and filter_lookup for R and I,
+    # making it the most reliable first choice for standard optical filters.
+    exclude = {'SDSS'}
+    preferred = ['APASS']
+    others = [n for n in known_catalogs.keys() if n not in exclude and n not in preferred]
+    catalog_names = [n for n in preferred if n in known_catalogs] + others
     if not catalog_names:
         return None, (
             "No stored field_cal presets found and no catalog plugins registered; "
@@ -485,9 +490,6 @@ def build_default_field_cal(user_id: Optional[int]) -> tuple:
     fc.source_match_tol       = FCAL_SOURCE_MATCH_TOL
     fc.source_inclusion_percent = FCAL_SOURCE_INCL_PCT
     fc.min_snr                = FCAL_MIN_SNR
-    # Disable variable-star exclusion: it issues an extra VSX VizieR query per
-    # catalog and can silently remove calibration sources in dense fields.
-    fc.variable_check_tol     = 0
     return fc, ""
 
 
