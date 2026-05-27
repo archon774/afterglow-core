@@ -179,7 +179,7 @@ def configure_afterglow_environment() -> None:
         f"DATA_ROOT = '{_DB_DIR}'\n"
         f"DATA_FILE_ROOT = '{_DATA_ROOT}'\n"
         f"DATA_FILE_COMPRESSION = False\n"
-        f"DEBUG = False\n"
+        f"DEBUG = True\n"
         f"ANET_INDEX_PATH = {ANET_INDEX_PATH!r}\n"
         # vizier.u-strasbg.fr redirects POST→GET (301), dropping the query body.
         # vizier.cds.unistra.fr is the canonical current address of VizieR.
@@ -485,6 +485,9 @@ def build_default_field_cal(user_id: Optional[int]) -> tuple:
     fc.source_match_tol       = FCAL_SOURCE_MATCH_TOL
     fc.source_inclusion_percent = FCAL_SOURCE_INCL_PCT
     fc.min_snr                = FCAL_MIN_SNR
+    # Disable variable-star exclusion: it issues an extra VSX VizieR query per
+    # catalog and can silently remove calibration sources in dense fields.
+    fc.variable_check_tol     = 0
     return fc, ""
 
 
@@ -795,7 +798,10 @@ def process_one_file(index: int, input_path: Path) -> dict:
                 errs = fc_meta.get('errors', [])
                 err_str = '; '.join(e.get('detail', str(e)) for e in errs)
                 notes.append(f'field_cal_no_results={err_str[:100]}')
-                logger.info("[%03d] Field cal: no results. Errors: %s", index, err_str)
+                warns = fc_meta.get('warnings', [])
+                warn_str = '; '.join(w.get('detail', str(w)) for w in warns) if warns else '(none)'
+                logger.info("[%03d] Field cal: no results. Errors: %s | Warnings: %s",
+                            index, err_str, warn_str)
 
         except Exception as fc_exc:
             row['field_cal_ok'] = False
